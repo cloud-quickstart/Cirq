@@ -29,7 +29,7 @@ class _BaseNamedQid(raw_types.Qid):
 
     _name: str
     _dimension: int
-    _comp_key: Optional[str] = None
+    _comp_key: Optional[Tuple[str, int]] = None
     _hash: Optional[int] = None
 
     def __hash__(self) -> int:
@@ -37,25 +37,49 @@ class _BaseNamedQid(raw_types.Qid):
             self._hash = hash((self._name, self._dimension))
         return self._hash
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         # Explicitly implemented for performance (vs delegating to Qid).
-        if isinstance(other, _BaseNamedQid):
-            return self is other or (
-                self._name == other._name and self._dimension == other._dimension
-            )
-        return NotImplemented
+        if not isinstance(other, _BaseNamedQid):
+            return NotImplemented
+        return self is other or (
+            self._name == other._name and self._dimension == other._dimension
+        )
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         # Explicitly implemented for performance (vs delegating to Qid).
-        if isinstance(other, _BaseNamedQid):
-            return self is not other and (
-                self._name != other._name or self._dimension != other._dimension
-            )
-        return NotImplemented
+        if not isinstance(other, _BaseNamedQid):
+            return NotImplemented
+        return self is not other and (
+            self._name != other._name or self._dimension != other._dimension
+        )
+
+    def __lt__(self, other) -> bool:
+        # Explicitly implemented for performance (vs delegating to Qid).
+        if not isinstance(other, _BaseNamedQid):
+            return NotImplemented
+        return self._comparison_key() < other._comparison_key()
+
+    def __gt__(self, other) -> bool:
+        # Explicitly implemented for performance (vs delegating to Qid).
+        if not isinstance(other, _BaseNamedQid):
+            return NotImplemented
+        return (self._comparison_key(), self._dimension) > (other._comparison_key(), other._dimension)
+
+    def __le__(self, other) -> bool:
+        # Explicitly implemented for performance (vs delegating to Qid).
+        if not isinstance(other, _BaseNamedQid):
+            return NotImplemented
+        return (self._comparison_key(), self._dimension) <= (other._comparison_key(), other._dimension)
+
+    def __ge__(self, other) -> bool:
+        # Explicitly implemented for performance (vs delegating to Qid).
+        if not isinstance(other, _BaseNamedQid):
+            return NotImplemented
+        return (self._comparison_key(), self._dimension) >= (other._comparison_key(), other._dimension)
 
     def _comparison_key(self):
         if self._comp_key is None:
-            self._comp_key = _pad_digits(self._name)
+            self._comp_key = _pad_digits(self._name), self._dimension
         return self._comp_key
 
     @property

@@ -33,6 +33,7 @@ class _BaseGridQid(ops.Qid):
     _row: int
     _col: int
     _dimension: int
+    _comp_key: Optional[Tuple[int, int, int]] = None
     _hash: Optional[int] = None
 
     def __hash__(self) -> int:
@@ -40,28 +41,54 @@ class _BaseGridQid(ops.Qid):
             self._hash = hash((self._row, self._col, self._dimension))
         return self._hash
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         # Explicitly implemented for performance (vs delegating to Qid).
-        if isinstance(other, _BaseGridQid):
-            return self is other or (
-                self._row == other._row
-                and self._col == other._col
-                and self._dimension == other._dimension
-            )
-        return NotImplemented
+        if not isinstance(other, _BaseGridQid):
+            return NotImplemented
+        return self is other or (
+            self._row == other._row
+            and self._col == other._col
+            and self._dimension == other._dimension
+        )
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         # Explicitly implemented for performance (vs delegating to Qid).
-        if isinstance(other, _BaseGridQid):
-            return self is not other and (
-                self._row != other._row
-                or self._col != other._col
-                or self._dimension != other._dimension
-            )
-        return NotImplemented
+        if not isinstance(other, _BaseGridQid):
+            return NotImplemented
+        return self is not other and (
+            self._row != other._row
+            or self._col != other._col
+            or self._dimension != other._dimension
+        )
+
+    def __lt__(self, other) -> bool:
+        # Explicitly implemented for performance (vs delegating to Qid).
+        if not isinstance(other, _BaseGridQid):
+            return NotImplemented
+        return self._comparison_key() < other._comparison_key()
+
+    def __gt__(self, other) -> bool:
+        # Explicitly implemented for performance (vs delegating to Qid).
+        if not isinstance(other, _BaseGridQid):
+            return NotImplemented
+        return self._comparison_key() > other._comparison_key()
+
+    def __le__(self, other) -> bool:
+        # Explicitly implemented for performance (vs delegating to Qid).
+        if not isinstance(other, _BaseGridQid):
+            return NotImplemented
+        return self._comparison_key() <= other._comparison_key()
+
+    def __ge__(self, other) -> bool:
+        # Explicitly implemented for performance (vs delegating to Qid).
+        if not isinstance(other, _BaseGridQid):
+            return NotImplemented
+        return self._comparison_key() >= other._comparison_key()
 
     def _comparison_key(self):
-        return self._row, self._col
+        if self._comp_key is None:
+            self._comp_key = (self._row, self._col, self._dimension)
+        return self._comp_key
 
     @property
     def row(self) -> int:
@@ -358,11 +385,6 @@ class GridQubit(_BaseGridQid):
 
     def _with_row_col(self, row: int, col: int) -> 'GridQubit':
         return GridQubit(row, col)
-
-    def _cmp_tuple(self):
-        cls = GridQid if type(self) is GridQubit else type(self)
-        # Must be same as Qid._cmp_tuple but with cls in place of type(self).
-        return (cls.__name__, repr(cls), self._comparison_key(), self.dimension)
 
     @staticmethod
     def square(diameter: int, top: int = 0, left: int = 0) -> List['GridQubit']:
